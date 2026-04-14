@@ -1,0 +1,21 @@
+{
+    "open_ports": [
+        135,
+        139,
+        445
+    ],
+    "connections": [
+        {
+            "port": 135,
+            "process": "svchost.exe"
+        },
+        {
+            "port": 139,
+            "process": "System"
+        },
+        {
+            "port": 445,
+            "process": "System"
+        }
+    ]
+}
