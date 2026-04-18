@@ -1,14 +1,64 @@
 import os
 import json
 from datetime import datetime
+import logging
 
-def get_current_time():
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+# ====================================================
+# Logging
+# ====================================================
+def setup_logging(log_dir):
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    log_file = os.path.join(log_dir, f"obsidian_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
+    
+    logging.basicConfig(
+        filename=log_file,
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
 
+def log_info(message):
+    logging.info(message)
+
+def log_warning(message):
+    logging.warning(message)
+
+def log_error(message):
+    logging.error(message)
+
+def log_debug(message):
+    logging.debug(message)
+
+# ====================================================
+# Config Management
+# ====================================================
 def load_config(file_path):
     with open(file_path, 'r') as f:
         config = json.load(f)
     return config
+
+def save_config(file_path, config):
+    with open(file_path, 'w') as f:
+        json.dump(config, f, indent=4)
+
+# ====================================================
+# Policy Management
+# ====================================================
+def load_policy(file_path):
+    if not os.path.exists(file_path):
+        return {"whitelist": [], "blacklist": []}
+    with open(file_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def save_policy(file_path, data):
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
+# ====================================================
+# Utility Functions
+# ====================================================
+def get_current_time():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def check_memory():
     memory_file = "memory.json"
