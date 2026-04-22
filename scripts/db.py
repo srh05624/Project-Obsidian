@@ -1,6 +1,10 @@
 import sqlite3
 import os
 
+local_path = str(os.getenv('APPDATA') or os.path.expanduser('~'))
+install_path = os.path.join(local_path, "ProjectObsidian")
+db_path = os.path.join(install_path, "connections.db")
+
 # =====================================================
 # Database Functions
 # =====================================================
@@ -14,6 +18,7 @@ def create_database(db_path):
                     name TEXT PRIMARY KEY,
                     path TEXT NOT NULL,
                     timestamp TEXT NOT NULL,
+                    pid INTEGER,
                     local_port INTEGER NOT NULL,
                     remote_ip TEXT NOT NULL,
                     remote_port INTEGER NOT NULL,
@@ -43,13 +48,14 @@ def delete_database(db_path):
 # =====================================================
 # Functions for single connection operations
 # =====================================================
-def insert_connection(db_path, name, path, timestamp, local_port, remote_ip, remote_port, status, blacklisted=0, whitelisted=0):
+def insert_connection(db_path, name, path, timestamp, pid, local_port, remote_ip, remote_port, status, blacklisted=0, whitelisted=0):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO connections (name, path, timestamp, local_port, remote_ip, remote_port, status, blacklisted, whitelisted)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (name, path, timestamp, local_port, remote_ip, remote_port, status, blacklisted, whitelisted))
+        INSERT INTO connections (name, path, timestamp, pid, local_port, remote_ip, remote_port, status, blacklisted, whitelisted)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+
+    ''', (name, path, timestamp, pid, local_port, remote_ip, remote_port, status, blacklisted, whitelisted))
     conn.commit()
     conn.close()
 
@@ -73,6 +79,7 @@ def update_connection(db_path, name, **kwargs):
             name,
             kwargs.get('path', ''),
             kwargs.get('timestamp', ''),
+            kwargs.get('pid', 0),
             kwargs.get('local_port', 0),
             kwargs.get('remote_ip', ''),
             kwargs.get('remote_port', 0),
@@ -114,7 +121,7 @@ def fetch_connections(db_path):
     cursor.execute('SELECT * FROM connections')
     rows = cursor.fetchall()
     conn.close()
-    return rows
+    return [dict(zip([column[0] for column in cursor.description], row)) for row in rows]
 
 def fetch_blacklisted_connections(db_path):
     conn = sqlite3.connect(db_path)
@@ -122,7 +129,7 @@ def fetch_blacklisted_connections(db_path):
     cursor.execute('SELECT * FROM connections WHERE blacklisted = 1')
     rows = cursor.fetchall()
     conn.close()
-    return rows
+    return [dict(zip([column[0] for column in cursor.description], row)) for row in rows]
 
 def fetch_whitelisted_connections(db_path):
     conn = sqlite3.connect(db_path)
@@ -130,7 +137,7 @@ def fetch_whitelisted_connections(db_path):
     cursor.execute('SELECT * FROM connections WHERE whitelisted = 1')
     rows = cursor.fetchall()
     conn.close()
-    return rows
+    return [dict(zip([column[0] for column in cursor.description], row)) for row in rows]
 
 def fetch_suspicious_connections(db_path):
     conn = sqlite3.connect(db_path)
@@ -138,7 +145,7 @@ def fetch_suspicious_connections(db_path):
     cursor.execute('SELECT * FROM connections WHERE blacklisted = 0 AND whitelisted = 0')
     rows = cursor.fetchall()
     conn.close()
-    return rows
+    return [dict(zip([column[0] for column in cursor.description], row)) for row in rows]
 
 def fetch_recent_connections(db_path, limit=10):
     conn = sqlite3.connect(db_path)
@@ -146,7 +153,7 @@ def fetch_recent_connections(db_path, limit=10):
     cursor.execute('SELECT * FROM connections ORDER BY timestamp DESC LIMIT ?', (limit,))
     rows = cursor.fetchall()
     conn.close()
-    return rows
+    return [dict(zip([column[0] for column in cursor.description], row)) for row in rows]
 
 # =====================================================
 # Additional utility functions
@@ -191,7 +198,7 @@ def export_connections_to_csv(db_path, csv_path):
     connections = fetch_connections(db_path)
     with open(csv_path, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(['ID', 'Timestamp', 'Local Port', 'Remote IP', 'Remote Port', 'Status', 'Blacklisted', 'Whitelisted'])
+        writer.writerow(['ID', 'Timestamp', 'PID', 'Local Port', 'Remote IP', 'Remote Port', 'Status', 'Blacklisted', 'Whitelisted'])
         for conn in connections:
             writer.writerow(conn)
 
@@ -203,10 +210,11 @@ def import_connections_from_csv(db_path, csv_path):
         reader = csv.DictReader(csvfile)
         for row in reader:
             cursor.execute('''
-                INSERT INTO connections (timestamp, local_port, remote_ip, remote_port, status, blacklisted, whitelisted)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO connections (timestamp, pid, local_port, remote_ip, remote_port, status, blacklisted, whitelisted)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 row['Timestamp'], 
+                int(row['PID']), 
                 int(row['Local Port']), 
                 row['Remote IP'], 
                 int(row['Remote Port']), 

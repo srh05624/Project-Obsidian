@@ -38,7 +38,7 @@ def get_listeners():
             })
     return listeners
 
-def kill_pid(pid):
+def kill_process(pid):
     try:
         p = psutil.Process(pid)
         print(f"Killing {p.name()} (PID {pid})")

@@ -22,16 +22,13 @@ default_config = {
     },
     "alerts": {
         "enabled": True,
-        "notify_on_new_connection": True,
-        "notify_on_suspicious_activity": True,
         "desktop": {
             "enabled": True,
             "app_name": "Project Obsidian",
             "icon_path": ""
         },
         "discord": {
-            "enabled": False,
-            "webhook_url": "",
+            "enabled": True,
             "mention_role_id": ""
         }
         
