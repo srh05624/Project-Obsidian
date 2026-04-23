@@ -3,7 +3,6 @@ from scripts import utils
 from win11toast import toast_async
 
 seen_alerts = set()
-pending_actions = {}
 last_alert_time = {}
 
 timer = 600 # Time to wait before allowing another alert for the same process (in seconds)
@@ -18,12 +17,10 @@ async def alert_user(msg):
             return None
         else:
             seen_alerts.remove(msg)
-            pending_actions.pop(msg, None)
             last_alert_time.pop(msg, None)
             utils.log_info(f"Alert for '{msg}' is now allowed again.")
     
     seen_alerts.add(msg)
-    pending_actions[msg] = True
     last_alert_time[msg] = asyncio.get_event_loop().time()
 
     def on_click(args):

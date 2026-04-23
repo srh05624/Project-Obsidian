@@ -9,7 +9,7 @@ def generate_report():
         report_path = installer.reports_path + "/network_report_" + utils.get_current_time().replace(":", "-") + ".csv"
         with open(report_path, "w") as f:
             writer = csv.writer(f)
-            writer.writerow(["Key", "Name", "Path", "Remote IP", "Remote Port", "Local Port", "PID", "Status", "Blacklisted", "Whitelisted", "Timestamp"])
+            writer.writerow(["Key", "Name", "Path", "Remote IP", "Remote Port", "Local Port", "PID", "Status", "Blacklisted", "Whitelisted", "Ignored On", "Timestamp"])
             for conn in connections:
                 conn_dict = db.convert_to_dict(conn)
                 if conn_dict:
@@ -24,6 +24,7 @@ def generate_report():
                         conn_dict["status"],
                         "Yes" if conn_dict["blacklisted"] else "No",
                         "Yes" if conn_dict["whitelisted"] else "No",
+                        conn_dict["ignored_on"] if conn_dict["ignored_on"] else "N/A",
                         conn_dict["timestamp"]
                     ])
         

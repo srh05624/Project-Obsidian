@@ -40,7 +40,11 @@ db = DatabaseManager(db_path)
 def convert_to_dict(row):
     if row is None:
         return None
-    columns = ['key', 'name', 'path', 'timestamp', 'pid', 'local_port', 'remote_ip', 'remote_port', 'status', 'blacklisted', 'whitelisted']
+    columns = [
+        'key', 'name', 'path', 'timestamp', 'pid',
+        'local_port', 'remote_ip', 'remote_port', 'status',
+        'blacklisted', 'whitelisted', 'ignored_on'
+    ]
     return {columns[i]: row[i] for i in range(len(columns))}
 
 # =====================================================
@@ -60,7 +64,8 @@ def create_database(db_path):
                 remote_port INTEGER NOT NULL,
                 status TEXT NOT NULL,
                 blacklisted INTEGER DEFAULT 0,
-                whitelisted INTEGER DEFAULT 0
+                whitelisted INTEGER DEFAULT 0,
+                ignored_on TEXT
             ''')
             db._get_connection().execute('PRAGMA journal_mode=WAL;')
             journal_mode = db._get_connection().execute('PRAGMA journal_mode').fetchone()[0]
@@ -91,11 +96,11 @@ def clear_zero_pid_connections():
 # =====================================================
 # Functions for single connection operations
 # =====================================================
-def insert_connection(key, name, path, timestamp, pid, local_port, remote_ip, remote_port, status, blacklisted=0, whitelisted=0):
+def insert_connection(key, name, path, timestamp, pid, local_port, remote_ip, remote_port, status, blacklisted=0, whitelisted=0, ignored_on=None):
     db.execute_query('''
-        INSERT INTO connections (key, name, path, timestamp, pid, local_port, remote_ip, remote_port, status, blacklisted, whitelisted)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (key, name, path, timestamp, pid, local_port, remote_ip, remote_port, status, blacklisted, whitelisted))
+        INSERT INTO connections (key, name, path, timestamp, pid, local_port, remote_ip, remote_port, status, blacklisted, whitelisted, ignored_on)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (key, name, path, timestamp, pid, local_port, remote_ip, remote_port, status, blacklisted, whitelisted, ignored_on))
 
 def update_connection(key, **kwargs):
     if connection_exists(key):
@@ -118,7 +123,8 @@ def update_connection(key, **kwargs):
             kwargs.get('remote_port', 0),
             kwargs.get('status', ''),
             kwargs.get('blacklisted', 0),
-            kwargs.get('whitelisted', 0)
+            kwargs.get('whitelisted', 0),
+            kwargs.get('ignored_on', None)
         )
 
 
@@ -174,7 +180,7 @@ def export_connections_to_csv(path):
     connections = fetch_connections()
     with open(csv_path, "w", newline="") as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(["Key", "Name", "Path", "Remote IP", "Remote Port", "Local Port", "PID", "Status", "Blacklisted", "Whitelisted", "Timestamp"])
+            writer.writerow(["Key", "Name", "Path", "Remote IP", "Remote Port", "Local Port", "PID", "Status", "Blacklisted", "Whitelisted", "Ignored On", "Timestamp"])
             for conn in connections:
                 conn_dict = convert_to_dict(conn)
                 if conn_dict:
@@ -189,7 +195,8 @@ def export_connections_to_csv(path):
                         conn_dict["status"],
                         conn_dict["blacklisted"],
                         conn_dict["whitelisted"],
-                        conn_dict["timestamp"]
+                        conn_dict["ignored_on"],
+                        conn_dict["timestamp"],
                     ])
             
 def import_connections_from_csv(csv_path):
@@ -208,5 +215,6 @@ def import_connections_from_csv(csv_path):
                 remote_port=int(row['Remote Port']), 
                 status=row['Status'], 
                 blacklisted=int(row['Blacklisted']), 
-                whitelisted=int(row['Whitelisted'])
+                whitelisted=int(row['Whitelisted']),
+                ignored_on=row['Ignored On'] if 'Ignored On' in row else None
             )

@@ -1,5 +1,5 @@
-from datetime import datetime
 import os, json, ctypes, logging
+from datetime import datetime, timedelta
 
 # ====================================================
 # Administrative Privileges Check
@@ -73,6 +73,20 @@ def get_current_time():
 
 def get_date():
     return datetime.now().strftime("%Y-%m-%d")
+
+def get_time():
+    return datetime.now().strftime("%H:%M:%S")
+
+def get_deltatime():
+    return datetime.now().isoformat()
+
+def ignore_connection(ignored_on, offset_hours=1):
+    if ignored_on:
+        ignored_time = datetime.fromisoformat(ignored_on)
+        if datetime.now() - ignored_time < timedelta(hours=offset_hours):
+            log_info("  > Connection is currently ignored. Skipping alert.")
+            return True
+    return False
 
 def directory_exists(path):
     return os.path.isdir(path)

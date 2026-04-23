@@ -67,7 +67,7 @@ async def scan_network(config):
             local = (conn.laddr.ip, conn.laddr.port) if conn.laddr else "N/A"
             local_port = local[1] if local != "N/A" else 0
             remote = (conn.raddr.ip, conn.raddr.port) if conn.raddr else "N/A"
-            remote_ip = remote[0] if remote != "N/A" else 0
+            remote_ip = remote[0] if remote != "N/A" else ""
             remote_port = remote[1] if remote != "N/A" else 0
             status = conn.status
             
@@ -106,6 +106,7 @@ async def scan_network(config):
                 connection = db.convert_to_dict(db.get_connection(key)) if db.get_connection(key) else {}
                 blacklisted = connection['blacklisted'] if connection != None else 0
                 whitelisted = connection['whitelisted'] if connection != None else 0
+                ignored_on = connection['ignored_on'] if connection else None
 
                 utils.log_info(f"Connection: {name} {'blacklisted' if blacklisted else 'whitelisted' if whitelisted else 'unknown'}")
                 
@@ -140,6 +141,10 @@ async def scan_network(config):
 
                         if trigger_limit and trigger_count < trigger_limit:
                             utils.log_info(f"  > Trigger count {trigger_count} below limit {trigger_limit}, not alerting.")
+                        elif connection and ignored_on:
+                            if utils.ignore_connection(ignored_on, 1): # Check if we should still ignore based on time (hours)
+                                utils.log_debug("  > Connection is still within ignore period, skipping alert.")
+                                continue
                         else:
                             utils.log_info("  > Alerting user about suspicious connection...")
                             
@@ -159,6 +164,9 @@ async def scan_network(config):
                                 db.update_connection(key, blacklisted=0, whitelisted=0)
                                 if pid != 0:
                                     kill_process(pid)
+                            elif choice == "Ignore":
+                                db.update_connection(key, blacklisted=0, whitelisted=0, ignored_on=utils.get_deltatime())
+                                utils.log_info("  > User chose to ignore.")
                             else:
                                 utils.log_info("  > No action taken.")
             
