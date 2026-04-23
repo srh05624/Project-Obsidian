@@ -22,6 +22,16 @@ default_config = {
     },
     "alerts": {
         "enabled": True,
+        "trigger_limit": False,
+        "limit": 3,
+        "triggers":
+            {
+                "external_ip": True,
+                "established_connection": True,
+                "missing_path": True,
+                "from_downloads": True,
+                "unusual_port": True,
+            },
         "desktop": {
             "enabled": True,
             "app_name": "Project Obsidian",
@@ -44,20 +54,20 @@ default_config = {
 # =====================================================
 # Import and Export Functions
 # =====================================================
-def import_data(db_path, csv_path):
+def import_data(csv_path):
     try:
         if os.path.exists(csv_path):
-            db.import_connections_from_csv(db_path, csv_path)
+            db.import_connections_from_csv(csv_path)
             utils.log_info(f"Data imported successfully from: {csv_path}")
         else:
             utils.log_warning(f"CSV file not found at: {csv_path}")
     except Exception as e:
         utils.log_error(f"Error importing data: {str(e)}")
 
-def export_data(db_path, path):
+def export_data(path):
     try:
         os.makedirs(path, exist_ok=True)
-        db.export_connections_to_csv(db_path, path)
+        db.export_connections_to_csv(path)
         utils.log_info(f"Data exported successfully to: {path}")
     except Exception as e:
         utils.log_error(f"Error exporting data: {str(e)}")
@@ -101,7 +111,9 @@ def create_config_file():
     except Exception as e:
         return f"Error creating config file: {str(e)}", False
 
-def results(msg, success, data={"success": True, "messages": []}):
+def results(msg, success, data=None):
+    if data is None:
+        data = {"success": True, "messages": []}
     if not success:
         data["success"] = False
     data["messages"].append(msg)
