@@ -60,6 +60,9 @@ def save_policy(file_path, data):
 def get_current_time():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+def get_date():
+    return datetime.now().strftime("%Y-%m-%d")
+
 def check_memory():
     memory_file = "memory.json"
     if not os.path.exists(memory_file):

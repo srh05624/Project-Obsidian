@@ -1,4 +1,4 @@
-from scripts import installer, network, utils, alerts
+from scripts import installer, network, reports, utils, alerts
 import asyncio
 from dotenv import load_dotenv
 
@@ -28,21 +28,31 @@ async def main():
             utils.log_info("Starting alert system...")
             print("Starting alert system...")
 
-            if config["alerts"]["discord"]["enabled"]:
-                asyncio.create_task(alerts.main())
-            else:
-                utils.log_info("Discord alerts are disabled in the configuration.")
+        if config["import"]["enabled"]:
+            utils.log_info("Importing data from CSV...")
+            print("Importing data from CSV...")
+            installer.import_data(installer.database_path, config["import"]["csv_path"])
+            
+        if config["export"]["enabled"]:
+            utils.log_info("Exporting data to CSV...")
+            print("Exporting data to CSV...")
+            installer.export_data(installer.database_path, config["export"]["csv_path"])
 
         error_count = 0
         MAX_ERRORS = 5
 
         while True:
             try:
-                current_time = utils.get_current_time()
-                utils.log_info(f"[{current_time}] Starting network scan...")
-                network.scan_network(installer.database_path)
+                await network.scan_network(installer.database_path, config["alerts"]["enabled"])
+                utils.log_info(f"[{utils.get_current_time()}] Network scan completed. Generating report...")
 
-                utils.log_info(f"[{current_time}] Network scan completed. Sleeping for {config['interval']} seconds...")
+                report_response = reports.generate_report(installer.database_path)
+                if report_response["success"]:
+                    utils.log_info(f"Report generated successfully: {report_response['message']}")
+                else:
+                    utils.log_error(f"Report generation failed: {report_response['message']}")
+
+                utils.log_info(f"[{utils.get_current_time()}] Network scan completed. Sleeping for {config['interval']} seconds...")
                 print(f"Sleeping for {config['interval']} seconds...")
 
                 await asyncio.sleep(config["interval"])
@@ -55,8 +65,6 @@ async def main():
                     break
             finally:
                 utils.log_info(f"[{utils.get_current_time()}] Main loop iteration completed.")
-
-            
 
 if __name__ == "__main__":
     asyncio.run(main())

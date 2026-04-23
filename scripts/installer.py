@@ -26,20 +26,41 @@ default_config = {
             "enabled": True,
             "app_name": "Project Obsidian",
             "icon_path": ""
-        },
-        "discord": {
-            "enabled": True,
-            "mention_role_id": ""
         }
-        
     },
-    "scan_ports_range": [1, 1024],
+    "import": {
+        "enabled": False,
+        "csv_path": os.path.join(install_path, "import.csv")
+    },
+    "export": {
+        "enabled": False,
+        "csv_path": os.path.join(install_path, "exports")
+    },
     "interval": 3600,
     "max_threads": 100,
-    "force_stop": False,
-    "full_scan": True,
     "report": True
 }
+
+# =====================================================
+# Import and Export Functions
+# =====================================================
+def import_data(db_path, csv_path):
+    try:
+        if os.path.exists(csv_path):
+            db.import_connections_from_csv(db_path, csv_path)
+            utils.log_info(f"Data imported successfully from: {csv_path}")
+        else:
+            utils.log_warning(f"CSV file not found at: {csv_path}")
+    except Exception as e:
+        utils.log_error(f"Error importing data: {str(e)}")
+
+def export_data(db_path, path):
+    try:
+        os.makedirs(path, exist_ok=True)
+        db.export_connections_to_csv(db_path, path)
+        utils.log_info(f"Data exported successfully to: {path}")
+    except Exception as e:
+        utils.log_error(f"Error exporting data: {str(e)}")
 
 # =====================================================
 # Installation and Setup Functions

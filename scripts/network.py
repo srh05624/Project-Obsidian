@@ -1,6 +1,5 @@
-import socket
-import psutil
-from scripts import utils, db
+import psutil, socket, subprocess
+from scripts import alerts, utils, db
 
 def get_local_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -14,42 +13,28 @@ def get_local_ip():
         s.close()
     return IP
 
-def get_listeners():
-    listeners = []
-    for conn in psutil.net_connections(kind='inet'):
-        if conn.status == psutil.CONN_LISTEN and conn.laddr:
-            pid = conn.pid
-            name = "Unknown"
-            exe = "Unknown"
-            try:
-                if pid:
-                    p = psutil.Process(pid)
-                    name = p.name()
-                    exe = p.exe()
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-                pass
-
-            listeners.append({
-                "ip": conn.laddr.ip,
-                "port": conn.laddr.port,
-                "pid": pid,
-                "name": name,
-                "exe": exe
-            })
-    return listeners
+def get_actual_port(pid):
+    try:
+        output = subprocess.check_output(f"ss -lntp | grep {pid}", shell=True).decode()
+        # Parse the output to extract the port from something like 127.0.0.1:44321
+        print(f"Actual port info:\n{output}")
+    except Exception as e:
+        print(f"Could not determine port: {e}")
 
 def kill_process(pid):
     try:
         p = psutil.Process(pid)
-        print(f"Killing {p.name()} (PID {pid})")
+        utils.log_info(f"Killing {p.name()} (PID {pid})")
         p.terminate()
         p.wait(timeout=5)
-        print("Process terminated.")
+        utils.log_info(f"Process terminated.")
     except Exception as e:
-        print(f"Failed: {e}")
+        utils.log_error(f"Failed: {e}")
 
-def scan_network(db_path):
+async def scan_network(db_path, alerts_enabled=False):
     try:
+        utils.log_info(f"[{utils.get_current_time()}] Starting network scan...")
+        
         for conn in psutil.net_connections(kind='inet'):
             pid = conn.pid
             name = "Unknown"
@@ -72,6 +57,7 @@ def scan_network(db_path):
                         name = name,
                         path = exe,
                         timestamp = utils.get_current_time(),
+                        pid = pid,
                         local_port = local[1] if local != "N/A" else 0,
                         remote_ip = remote[0] if remote != "N/A" else "",
                         remote_port = remote[1] if remote != "N/A" else 0,
@@ -81,21 +67,33 @@ def scan_network(db_path):
                 utils.log_error(f"Error updating database: {str(e)}")
             
             connection = db.get_connection(db_path, name)
-            whitelisted = connection[7]
-            blacklisted = connection[8]
-            utils.log_info(
-                f"{name} ({exe}) | Local: {local} | Remote: {remote} | Status: {status} | "
-                f"{'BLACKLISTED' if blacklisted and not whitelisted else 'WHITELISTED' if whitelisted and not blacklisted else 'UNKNOWN'}"
-            )
+            blacklisted = connection[-2]
+            whitelisted = connection[-1]
+
+            utils.log_info(f"Connection: {name} {"blacklisted" if blacklisted else "whitelisted" if whitelisted else "unknown"}")
 
             if blacklisted and not whitelisted:
-                utils.log_warning("  > Blacklisted connection will be killed")
-            if whitelisted and not blacklisted:
-                utils.log_info("  > Whitelisted connection will be ignored")
+                utils.log_warning("  > Blacklisted connection detected!")
             if not whitelisted and not blacklisted:
-                utils.log_info("  > Unknown connection: consider whitelisting or blacklisting")
+                if alerts_enabled:
+                    utils.log_info("  > Alerting user about suspicious connection...")
+                    
+                    choice = await alerts.alert_user(
+                        f"Suspicious connection detected**\n" +
+                        f"Process: {name}\n" + f"PID: {pid}\n" +
+                        f"Path: `{exe}`\n" +
+                        f"Remote: `{remote[0]}:{remote[1]}`\n"
+                    )
 
+                    
+                    if choice == "Whitelist":
+                        db.update_connection(db.db_path, name, blacklisted=0, whitelisted=1)
+                    elif choice == "Blacklist":
+                        db.update_connection(db.db_path, name, blacklisted=1, whitelisted=0)
+                    elif choice == "Kill Once":
+                        db.update_connection(db.db_path, name, blacklisted=0, whitelisted=0)
+                        if pid != 0:
+                            kill_process(pid)
                 
-
     except Exception as e:
-        print(f"Error scanning network: {str(e)}")
+        utils.log_error(f"Error scanning network: {str(e)}")
