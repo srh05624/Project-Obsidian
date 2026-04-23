@@ -1,5 +1,4 @@
-import sqlite3
-import os
+import sqlite3, os
 from scripts import utils
 
 local_path = str(os.getenv('APPDATA') or os.path.expanduser('~'))

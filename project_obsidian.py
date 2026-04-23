@@ -1,6 +1,6 @@
-from scripts import installer, network, reports, utils, alerts
 import asyncio
 from dotenv import load_dotenv
+from scripts import installer, network, reports, utils
 
 load_dotenv()
 

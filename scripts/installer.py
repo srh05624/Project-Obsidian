@@ -1,5 +1,5 @@
-from scripts import db, utils
 import os
+from scripts import db, utils
 
 local_path = str(os.getenv('APPDATA') or os.path.expanduser('~'))
 install_path = os.path.join(local_path, "ProjectObsidian")
