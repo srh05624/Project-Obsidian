@@ -111,7 +111,7 @@ async def scan_network(config):
                 utils.log_info(f"Connection: {name} {'blacklisted' if blacklisted else 'whitelisted' if whitelisted else 'unknown'}")
                 
                 if blacklisted and not whitelisted:
-                    utils.log_warning("  > Blacklisted connection detected!")
+                    utils.log_info("  > Blacklisted connection detected!")
 
                 if not whitelisted and not blacklisted:
                     if config["alerts"]["enabled"]:
@@ -120,23 +120,23 @@ async def scan_network(config):
                         trigger_count = 0
 
                         if triggers["external_ip"] and remote_ip != 0 and not is_private_ip(remote_ip):
-                            utils.log_warning("  > Trigger: External IP")
+                            utils.log_info("  > Trigger: External IP")
                             trigger_count += 1
 
                         if triggers["established_connection"] and status == "ESTABLISHED":
-                            utils.log_warning("  > Trigger: Established Connection")
+                            utils.log_info("  > Trigger: Established Connection")
                             trigger_count += 1
 
                         if triggers["missing_path"] and (exe == "Unknown" or not utils.file_exists(exe)):
-                            utils.log_warning("  > Trigger: Missing Executable Path")
+                            utils.log_info("  > Trigger: Missing Executable Path")
                             trigger_count += 1
 
                         if triggers["from_downloads"] and "downloads" in exe.lower():
-                            utils.log_warning("  > Trigger: Executable from Downloads Folder")
+                            utils.log_info("  > Trigger: Executable from Downloads Folder")
                             trigger_count += 1
 
                         if triggers["unusual_port"] and remote_port not in [80, 443, 22, 21, 25, 110, 995]:
-                            utils.log_warning("  > Trigger: Unusual Remote Port")
+                            utils.log_info("  > Trigger: Unusual Remote Port")
                             trigger_count += 1
 
                         if trigger_limit and trigger_count < trigger_limit:

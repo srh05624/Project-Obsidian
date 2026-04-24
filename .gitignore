@@ -1,4 +1,7 @@
 /.vscode
 /__pycache__
+/build
 PNG_to_ICO.py
 .gitignore
+icon.ico
+input.png

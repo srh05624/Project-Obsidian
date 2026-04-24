@@ -1,8 +1,5 @@
 import asyncio
-from dotenv import load_dotenv
 from scripts import installer, network, reports, utils
-
-load_dotenv()
 
 async def main():
     current_time = utils.get_current_time()
