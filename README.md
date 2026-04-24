@@ -57,7 +57,7 @@ Project Obsidian/
 
 ## 🛠️ Installation (Source)
 
-### Requirements
+### Requirements for Python Running
 
 * Python 3.10+
 * Windows OS
@@ -78,12 +78,7 @@ python project_obsidian.py
 
 ## 📦 Build (Executable)
 
-```bash
-python -m PyInstaller --onefile --noconsole --uac-admin ^
-  --hidden-import win11toast ^
-  --collect-all win11toast ^
-  project_obsidian.py
-```
+ * Easy to use executable included inside dist folder
 
 > ⚠️ If using PowerShell, replace `^` with `` ` ``
 
