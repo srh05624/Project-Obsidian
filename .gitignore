@@ -1,2 +1,4 @@
 /.vscode
 /__pycache__
+PNG_to_ICO.py
+.gitignore
