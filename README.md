@@ -80,8 +80,6 @@ python project_obsidian.py
 
  * Easy to use executable included inside dist folder
 
-> ⚠️ If using PowerShell, replace `^` with `` ` ``
-
 ---
 
 ## 📊 Database
