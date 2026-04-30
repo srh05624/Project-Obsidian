@@ -1,3 +1,14 @@
+## What This Does
+This tool monitors network activity and provides insight into active connections and port usage.
+
+## Features
+- Monitor active network connections
+- Track port usage
+- Lightweight and fast
+
+## Why I Built This
+I built this to better understand system-level network activity and experiment with detecting unusual connections.
+
 # 🛡️ Project Obsidian
 
 **Project Obsidian** is a lightweight Windows security tool that monitors active network connections and gives you direct control over unknown or suspicious activity in real time.
