@@ -147,11 +147,6 @@ Project Obsidian is built around one idea:
 
 > **You should see what’s happening — and decide what to trust.**
 
----
-
-## 📜 License
-
-MIT License (or update as needed)
 
 ---
 
